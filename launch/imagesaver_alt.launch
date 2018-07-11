@@ -1,0 +1,9 @@
+<launch>
+  <node name="imagesavernode" pkg="image_view" type="image_saver" output="screen" cwd="node">
+    <!--param name="image" value="/camera/color/image_raw"/ -->
+    <remap from="image" to="/camera/color/image_raw"/>
+    <param name="sec_per_frame" value="0.5"/>
+    <param name="filename_format" value="/home/frederico/catkin_ws/images/image%04d.png"/>
+    <!-- encoding:=16UC1 -->
+  </node>
+</launch>

@@ -1,0 +1,7 @@
+<launch>
+  <node name="imagesavernode" pkg="image_view" type="extract_images" >
+    <param name="image" value="/camera/color/image_raw"/>
+    <param name="sec_per_frame" value="0.5"/>
+    <param name="filename_format" value="images/image%04d.png"/>
+  </node>
+</launch>

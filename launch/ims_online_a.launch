@@ -1,0 +1,11 @@
+<launch>
+  <arg name="dnamespace" default="common" />
+  <node name="tmpinit" pkg="dockerlauncher" type="init_dt_temp.sh" output="screen" args="$(find dockerlauncher) $(arg dnamespace)"/>
+  <!--include file="$(find realsense2_camera)/launch/rs_rgbd.launch"/-->
+  <node name="imagesavernode" pkg="image_view" type="image_saver" >
+    <remap from="image" to="/camera/color/image_raw"/>
+    <!--param name="sec_per_frame" value="0.5"/-->
+    <param name="save_all_image" value="false"/>
+    <param name="filename_format" value="/tmp/dtunnels/common/images/image%04d.png"/>
+  </node>
+</launch>

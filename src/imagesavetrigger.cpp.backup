@@ -1,0 +1,28 @@
+#include "ros/ros.h"
+ #include <std_srvs/Empty.h>
+ #include <string>
+
+int main(int argc, char **argv)
+{
+  ros::init(argc, argv, "imagesavetrigger");
+  ros::NodeHandle n("~");
+  std::string format_string;
+  n.param("filename_format", format_string, std::string("/tmp/dtunnels/common/image/my_image%04i.%s"));
+  ros::ServiceClient client = n.serviceClient<std_srvs::Empty>("/imagesavernode/save");
+  std_srvs::Empty srv;
+  srv.request.format_string = format_string;
+     client.call(srv);
+
+  ros::Rate loop_rate(1);
+
+  while (ros::ok())
+  {
+    ros::spinOnce();
+     client.call(srv);
+    ROS_INFO("Saving image stuff, because of reasons.");
+
+  }
+
+
+  return 0;
+}
