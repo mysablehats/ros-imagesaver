@@ -1,0 +1,9 @@
+<launch>
+  <arg name="dnamespace" default="common" />
+  <node name="periodicsaver" pkg="imagesaver" type="imagesavetrigger" output="screen">
+    <param name="dnamespace" value="$(arg dnamespace)"/>
+    <param name="save_dir" value="/tmp/dtunnels/$(arg dnamespace)/images"/>
+    <param name="max_images" value="100"/>
+    <param name="writerate" value="5"/>
+  </node>
+</launch>

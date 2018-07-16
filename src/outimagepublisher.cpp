@@ -19,98 +19,80 @@ int main(int argc, char** argv)
   image_transport::ImageTransport it(nh);
   std::string out_dir;
   float readrate;
+  std::string imagenameprefix;
   nh.getParam("out_dir", out_dir);
   nh.getParam("readrate", readrate);
+  nh.getParam("imagenameprefix", imagenameprefix);
   ROS_INFO("Extracting images from directory %s", out_dir.c_str());
   ROS_INFO("Read rate is %f Hz.", readrate);
+  ROS_INFO("Image name prefix is %s", imagenameprefix.c_str());
+
   path p(out_dir);
-  //path pp = p.parent_path();
   path oldestpng;
-  path oldestini;
+  int oldestcounter = 9999; // should maybe read from image%04d definition instead of doing this. well, future improvement if necessary
 
   cv_bridge::CvImage cv_image;
   sensor_msgs::Image ros_image;
   ros::Rate loop_rate(readrate);
-  //ros::Publisher pub = nh.advertise<sensor_msgs::Image>("/static_image", 1);
   image_transport::Publisher pub = it.advertise("dout", 1);
 
   while (ros::ok())
   {
     ros::spinOnce();
-    std::time_t t = std::time(nullptr);
-    std::localtime(&t);
-    for (auto i = directory_iterator(p); i != directory_iterator(); i++)
+    if (directory_iterator(p)==directory_iterator())
     {
-      path c = i->path();
-      std::time_t clastwritetime = boost::filesystem::last_write_time(c);
-      path stempathstr = p/c.stem();
-      path a(stempathstr.string()+".png");
-      path b(stempathstr.string()+".ini");
-      ROS_DEBUG("a %s",a.string().c_str());
-      ROS_DEBUG("b %s",b.string().c_str());
-      bool ispng = !(c.extension().string().compare(".png"));
-      bool doesiniexist = boost::filesystem::exists(b);
-      ROS_DEBUG("ispng %d",ispng);
-      ROS_DEBUG("doesiniexist %d",doesiniexist);
-
-      if (!is_directory(c)&& ispng &&doesiniexist) //we eliminate directories
+      //directory is empty! so sleep time...
+      ROS_INFO_THROTTLE(60,"directory is empty. maybe lower outimagepublisher refresh rate?");
+    }
+    else
+    {
+      for (auto i = directory_iterator(p); i != directory_iterator(); i++)
       {
-            ROS_DEBUG("t %ld",t);
-            ROS_DEBUG("clastwritetime %ld",clastwritetime);
-            if(t>clastwritetime)
-            {
-              t = clastwritetime;
-              oldestpng = a;
-              oldestini = b;
-              ROS_DEBUG("oldestpng %s",a.string().c_str());
-              ROS_DEBUG("ini from oldestpng %s",b.string().c_str());
-              //ROS_DEBUG("REACHED!!!!");
-            }
+        path c = i->path();
+        bool ispng = !(c.extension().string().compare(".png"));
+        ROS_DEBUG("ispng %d",ispng);
+        if (!is_directory(c)&& ispng) //we eliminate directories
+        {
+          std::string imagecounterstr = c.stem().string().substr (imagenameprefix.size(),4); // the number of digits here should be a parameter, hey?
+          int imagecounter = std::stoi (imagecounterstr);
+          if(imagecounter<oldestcounter)
+          {
+            oldestcounter = imagecounter;
+            oldestpng = c;
+            ROS_DEBUG("oldestpng %s",oldestpng.string().c_str());
+          }
 
+        }
+        else
+        continue;
       }
-      else
-      continue;
-    }
-    //cout << i->path().filename().string() << " " <<  i->path().extension().string() << endl;
-    //imagecounter++;
-    //cv_image.image = cv::imread(i->path().filename().string(),CV_LOAD_IMAGE_COLOR);
-    //cv_image.encoding = "bgr8";
-    //cv_image.toImageMsg(ros_image);
-    //pub.publish(ros_image);
-    std::string imagefile = oldestpng.string();
-    ROS_DEBUG("reading image file: %s", imagefile.c_str());
-    cv::Mat image = cv::imread(imagefile, CV_LOAD_IMAGE_COLOR);
-    if (image.empty())
-    {
-      ROS_ERROR("NO IMAGE!!!!");
-    }
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
-    pub.publish(msg);
-    ROS_DEBUG("published image message");
-    // removing the file
 
-    //auto a = pp/(i->path().filename().string());
+      std::string imagefile = oldestpng.string();
+      ROS_DEBUG("reading image file: %s", imagefile.c_str());
+      cv::Mat image = cv::imread(imagefile, CV_LOAD_IMAGE_COLOR);
+      if (image.empty())
+      {
+        //ROS_ERROR("NO IMAGE!!!!");
+        ROS_DEBUG("NO IMAGE!!!!");
+      }
+      sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
+      pub.publish(msg);
+      ROS_DEBUG("published image message");
 
-    //auto b = pp/(i->path().stem().string()+".ini");
-    //ROS_INFO("just path: %s", c.string().c_str());
-    ROS_DEBUG("prefix: %s", p.string().c_str());
-    ROS_DEBUG("STUFF I WILL REMOVE: %s %s", oldestpng.c_str(),oldestini.c_str());
-    try
-    {
-      boost::filesystem::remove(oldestpng);
-      boost::filesystem::remove(oldestini);
-
+      // removing the file
+      ROS_DEBUG("prefix: %s", p.string().c_str());
+      ROS_DEBUG("STUFF I WILL REMOVE: %s", oldestpng.c_str());
+      try
+      {
+        boost::filesystem::remove(oldestpng);
+      }
+      catch (filesystem_error &e)
+      {
+        std::string errorstring = e.what();
+        ROS_ERROR("%s", errorstring.c_str());
+      }
+      oldestcounter = 9999;
     }
-    catch (filesystem_error &e)
-    {
-      std::string errorstring = e.what();
-      ROS_ERROR("%s", errorstring.c_str());
-    }
-
     loop_rate.sleep();
-
-
-
-
   }
 }

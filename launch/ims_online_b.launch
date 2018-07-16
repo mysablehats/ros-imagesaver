@@ -1,6 +1,0 @@
-<launch>
-  <node name="periodicsaver" pkg="imagesaver" type="imagesavetrigger" output="screen">
-    <param name="save_dir" value="/tmp/dtunnels/common/images"/>
-    <param name="max_images" value="10"/>
-  </node>
-</launch>

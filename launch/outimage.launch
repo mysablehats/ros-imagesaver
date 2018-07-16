@@ -1,9 +1,11 @@
 <launch>
+  <arg name="dnamespace" default="common" />
   <node name="outimpubr" pkg="imagesaver" type="outimagepublisher" output="screen">
-    <param name="out_dir" value="/tmp/dtunnels/common/images"/>
+    <param name="out_dir" value="/tmp/dtunnels/$(arg dnamespace)/out"/>
+    <param name="imagenameprefix" value="image"/>
     <!-- readrate needs to be faster than the write rate or the directory will get
 clogged. Also I have no idea why, but the ini files don't get erased. maybe my
 code is too slow ? -->
-    <param name="readrate" value="2"/>
+    <param name="readrate" value="0.1"/>
   </node>
 </launch>
